@@ -108,13 +108,11 @@ async function downloadRecords() {
   const client = initSupabase();
   if (!client) throw new Error('Supabase 未配置');
 
-  const deviceId = getDeviceId();
   const user = getCurrentUser();
 
   const { data, error } = await client
     .from(TABLE_NAME)
     .select('*')
-    .eq('device_id', deviceId)
     .eq('username', user)
     .order('created_at', { ascending: false });
 
@@ -142,12 +140,10 @@ async function downloadRecords() {
 async function getCloudCount() {
   const client = initSupabase();
   if (!client) return 0;
-  const deviceId = getDeviceId();
   const user = getCurrentUser();
   const { count, error } = await client
     .from(TABLE_NAME)
     .select('*', { count: 'exact', head: true })
-    .eq('device_id', deviceId)
     .eq('username', user);
   if (error) return 0;
   return count || 0;
