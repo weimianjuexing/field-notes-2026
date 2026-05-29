@@ -248,6 +248,13 @@
                 <button class="btn btn-success btn-lg" id="btnUpload" onclick="uploadAll()" disabled>
                     <i class="bi bi-cloud-upload"></i> 上传并下载
                 </button>
+                <!-- 自动导出开关 -->
+                <div class="d-flex align-items-center justify-content-between mt-1 px-1">
+                    <span class="text-muted small">同步后自动导出Excel</span>
+                    <div class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" id="autoExportSwitch" checked onchange="toggleAutoExport()">
+                    </div>
+                </div>
             </div>
 
             <!-- 进度 -->
@@ -396,6 +403,39 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
                     <button type="button" class="btn btn-danger" id="confirmBtn">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导出范围 Modal -->
+    <div class="modal fade" id="exportRangeModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-file-earmark-excel"></i> 导出 Excel</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">导出范围</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="exportRange" id="rangeAll" value="all" checked>
+                            <label class="form-check-label" for="rangeAll">全部数据</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="exportRange" id="rangeUploaded" value="uploaded">
+                            <label class="form-check-label" for="rangeUploaded">本次上传的数据</label>
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="skipExportDialog">
+                        <label class="form-check-label" for="skipExportDialog">下次不再询问，使用相同设置</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-success" onclick="confirmExportRange()">确定导出</button>
                 </div>
             </div>
         </div>

@@ -135,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initApp() {
     await initDB();
     initSupabaseConfig();
+    initAutoExportSwitch();
     renderDatePage();
     autoSyncOnLogin();
 }
@@ -698,7 +699,96 @@ async function exportAll() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, '试验数据');
     ws['!cols'] = Object.keys(rows[0]).map(k => ({ wch: Math.max(k.length * 2, 10) }));
-    XLSX.writeFile(wb, `田间试验数据_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(wb, `田间试验数据_${new Date().toISOString().split('T')[0]}_${getCurrentUser()}.xlsx`);
+    showToast(`已导出 ${rows.length} 条数据`, 'success');
+}
+
+// ===== 自动导出设置 =====
+function getAutoExportSettings() {
+    return {
+        enabled: localStorage.getItem('autoExport') !== 'false',
+        range: localStorage.getItem('exportRange') || 'all',
+        skipDialog: localStorage.getItem('skipExportDialog') === 'true'
+    };
+}
+
+function saveAutoExportSettings(settings) {
+    if (settings.enabled !== undefined) localStorage.setItem('autoExport', settings.enabled);
+    if (settings.range !== undefined) localStorage.setItem('exportRange', settings.range);
+    if (settings.skipDialog !== undefined) localStorage.setItem('skipExportDialog', settings.skipDialog);
+}
+
+function initAutoExportSwitch() {
+    const settings = getAutoExportSettings();
+    document.getElementById('autoExportSwitch').checked = settings.enabled;
+}
+
+function toggleAutoExport() {
+    const enabled = document.getElementById('autoExportSwitch').checked;
+    saveAutoExportSettings({ enabled });
+}
+
+let _uploadedRecords = [];
+
+function showExportRangeModal() {
+    const settings = getAutoExportSettings();
+    document.getElementById('rangeAll').checked = settings.range === 'all';
+    document.getElementById('rangeUploaded').checked = settings.range === 'uploaded';
+    document.getElementById('skipExportDialog').checked = settings.skipDialog;
+    new bootstrap.Modal(document.getElementById('exportRangeModal')).show();
+}
+
+function confirmExportRange() {
+    const range = document.querySelector('input[name="exportRange"]:checked').value;
+    const skipDialog = document.getElementById('skipExportDialog').checked;
+
+    saveAutoExportSettings({ range, skipDialog });
+    bootstrap.Modal.getInstance(document.getElementById('exportRangeModal')).hide();
+
+    if (range === 'all') {
+        exportAll();
+    } else {
+        exportUploadedData();
+    }
+}
+
+async function exportUploadedData() {
+    if (!_uploadedRecords || _uploadedRecords.length === 0) {
+        showToast('没有本次上传的数据', 'warning');
+        return;
+    }
+
+    const rows = [];
+    for (const record of _uploadedRecords) {
+        const tt = TEST_TYPES.find(t => t.id === record.testType);
+        const unit = tt ? tt.unit : '';
+        for (let ti = 0; ti < record.treatments.length; ti++) {
+            for (let r = 0; r < record.replicates; r++) {
+                const val = (record.values[ti] && record.values[ti][r] !== null)
+                    ? record.values[ti][r] : '';
+                rows.push({
+                    '日期': record.date,
+                    '试验名称': record.expName || '',
+                    '处理': record.treatments[ti],
+                    '重复': r + 1,
+                    '测试内容': tt ? tt.label : record.testType,
+                    '数值': val,
+                    '单位': unit
+                });
+            }
+        }
+    }
+
+    if (rows.length === 0) {
+        showToast('没有数据可导出', 'warning');
+        return;
+    }
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '试验数据');
+    ws['!cols'] = Object.keys(rows[0]).map(k => ({ wch: Math.max(k.length * 2, 10) }));
+    XLSX.writeFile(wb, `田间试验数据_${new Date().toISOString().split('T')[0]}_${getCurrentUser()}.xlsx`);
     showToast(`已导出 ${rows.length} 条数据`, 'success');
 }
 
@@ -766,10 +856,17 @@ async function uploadAll() {
     try {
         // Step 1: 上传所有数据
         const allRecords = [];
+        _uploadedRecords = [];
         for (const exp of exps) {
             const entries = await getAllDataEntries(exp.id);
             for (const entry of entries) {
-                allRecords.push(serializeForCloud(exp, entry));
+                const record = serializeForCloud(exp, entry);
+                allRecords.push(record);
+                _uploadedRecords.push({
+                    ...record,
+                    treatments: exp.treatments,
+                    replicates: exp.replicates
+                });
             }
         }
 
@@ -783,6 +880,27 @@ async function uploadAll() {
             addUploadLog(`⚠ 上传完成：成功 ${result.success}，失败 ${result.failed}`);
         } else {
             addUploadLog(`✅ 上传完成：${result.success} 条`);
+        }
+
+        // 上传完成后，检查是否需要自动导出
+        const settings = getAutoExportSettings();
+        if (settings.enabled) {
+            if (settings.skipDialog) {
+                // 直接按设置导出
+                if (settings.range === 'all') {
+                    await exportAll();
+                } else {
+                    await exportUploadedData();
+                }
+            } else {
+                // 显示弹窗让用户选择
+                showExportRangeModal();
+                // 等待用户选择（弹窗关闭后会自动执行导出）
+                await new Promise(resolve => {
+                    const modal = document.getElementById('exportRangeModal');
+                    modal.addEventListener('hidden.bs.modal', resolve, { once: true });
+                });
+            }
         }
 
         // Step 2: 从云端下载

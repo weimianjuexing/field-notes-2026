@@ -579,6 +579,38 @@ hr {
     animation: pulse 2s ease-in-out infinite;
 }
 
+/* ===== 表单开关 ===== */
+.form-switch .form-check-input {
+    width: 2.5em;
+    height: 1.3em;
+    cursor: pointer;
+}
+
+.form-switch .form-check-input:checked {
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
+
+.form-switch .form-check-input:focus {
+    box-shadow: 0 0 0 3px rgba(82, 183, 136, 0.15);
+}
+
+/* ===== 导出弹窗 ===== */
+#exportRangeModal .form-check-input[type="radio"] {
+    border-color: #c0c8c0;
+    cursor: pointer;
+}
+
+#exportRangeModal .form-check-input[type="radio"]:checked {
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
+
+#exportRangeModal .form-check-label {
+    cursor: pointer;
+    padding-left: 4px;
+}
+
 /* ===== 统计卡片 ===== */
 .stat-card {
     border-radius: var(--radius);
