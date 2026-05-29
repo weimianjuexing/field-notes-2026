@@ -72,7 +72,7 @@ function handleLogin() {
 const TEST_TYPES = [
     // 土壤物理
     { id: 'bulkDensity', label: '容重', unit: 'g/cm³', icon: 'bi-layers', color: '#795548', group: '土壤物理' },
-    { id: 'soilPh', label: 'pH', unit: '', icon: 'bi-flask', color: '#0d6efd', group: '土壤物理' },
+    { id: 'soilPh', label: 'pH', unit: '', icon: 'bi-droplet-fill', color: '#0d6efd', group: '土壤物理' },
     { id: 'porosity', label: '总孔隙度', unit: '%', icon: 'bi-circle', color: '#607d8b', group: '土壤物理' },
     { id: 'soilMoisture', label: '土壤水分', unit: '%', icon: 'bi-droplet', color: '#198754', group: '土壤物理' },
     // 土壤有机碳
