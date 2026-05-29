@@ -136,6 +136,45 @@ async function initApp() {
     await initDB();
     initSupabaseConfig();
     renderDatePage();
+    autoSyncOnLogin();
+}
+
+async function autoSyncOnLogin() {
+    try {
+        const cloudRecords = await downloadRecords();
+        const userRecords = cloudRecords.filter(r => r.user === getCurrentUser());
+        if (userRecords.length > 0) {
+            const localExps = await getAllExperiments();
+            let added = 0, updated = 0;
+            for (const cr of userRecords) {
+                const localExp = localExps.find(e => e.date === cr.date && (!cr.expName || e.name === cr.expName));
+                if (localExp) {
+                    const existing = await getDataEntry(localExp.id, cr.testType);
+                    if (existing) {
+                        const tCloud = new Date(cr.updatedAt || cr.createdAt);
+                        const tLocal = new Date(existing.updatedAt || existing.createdAt);
+                        if (tCloud > tLocal) {
+                            await saveDataEntry({ experimentId: localExp.id, testType: cr.testType, values: cr.values, user: getCurrentUser() });
+                            updated++;
+                        }
+                    } else {
+                        await saveDataEntry({ experimentId: localExp.id, testType: cr.testType, values: cr.values, user: getCurrentUser() });
+                        added++;
+                    }
+                } else {
+                    const newExpId = await createExperiment({ date: cr.date, name: cr.expName || '', treatments: cr.treatments || ['处理1', '处理2'], replicates: cr.replicates || 3, user: getCurrentUser() });
+                    await saveDataEntry({ experimentId: newExpId, testType: cr.testType, values: cr.values, user: getCurrentUser() });
+                    added++;
+                }
+            }
+            if (added > 0 || updated > 0) {
+                showToast(`已同步云端数据：新增${added}，更新${updated}`, 'info');
+                renderDatePage();
+            }
+        }
+    } catch (e) {
+        console.log('自动同步失败:', e.message);
+    }
 }
 
 // ===== 页面切换 =====
@@ -526,6 +565,19 @@ async function saveEntryData(silent) {
     });
 
     if (!silent) showToast('数据已保存', 'success');
+    autoUploadEntry(currentExperimentId, currentTestType);
+}
+
+async function autoUploadEntry(experimentId, testType) {
+    try {
+        const exp = await getExperiment(experimentId);
+        const entry = await getDataEntry(experimentId, testType);
+        if (!exp || !entry) return;
+        const record = serializeForCloud(exp, entry);
+        await uploadRecords([record]);
+    } catch (e) {
+        console.log('自动上传失败:', e.message);
+    }
 }
 
 // ===== 分享当前数据 =====
@@ -652,29 +704,11 @@ async function exportAll() {
 
 // ===== 云端同步 =====
 function initSupabaseConfig() {
-    const url = localStorage.getItem('supabase_url');
-    const key = localStorage.getItem('supabase_key');
-    if (url && key) {
-        document.getElementById('supabaseUrl').value = url;
-        document.getElementById('supabaseKey').value = key;
-        SUPABASE_CONFIG.url = url;
-        SUPABASE_CONFIG.key = key;
-    }
+    initSupabase();
 }
 
 function saveSupabaseConfig() {
-    const url = document.getElementById('supabaseUrl').value.trim();
-    const key = document.getElementById('supabaseKey').value.trim();
-    if (!url || !key) { showToast('请填写完整配置', 'warning'); return; }
-    if (!url.startsWith('https://')) { showToast('URL 须以 https:// 开头', 'warning'); return; }
-
-    localStorage.setItem('supabase_url', url);
-    localStorage.setItem('supabase_key', key);
-    SUPABASE_CONFIG.url = url;
-    SUPABASE_CONFIG.key = key;
-    showToast('配置已保存', 'success');
-    updateUploadUI();
-    addUploadLog('已连接: ' + url);
+    showToast('云端已自动配置', 'info');
 }
 
 async function updateUploadUI() {

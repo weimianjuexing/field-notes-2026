@@ -31,18 +31,10 @@
  */
 
 const SUPABASE_CONFIG = {
-  url: '',
-  key: ''
+  url: 'https://kimbzckjlvofcnrqrwak.supabase.co',
+  key: 'sb_publishable_oCYRFfjst-HsGJdi8io1DQ_0IUk-5gw'
 };
 const TABLE_NAME = 'trial_data';
-
-// 从 localStorage 读取配置
-(function loadConfig() {
-  const u = localStorage.getItem('supabase_url');
-  const k = localStorage.getItem('supabase_key');
-  if (u) SUPABASE_CONFIG.url = u;
-  if (k) SUPABASE_CONFIG.key = k;
-})();
 
 let supabaseClient = null;
 
@@ -63,7 +55,7 @@ function getDeviceId() {
 }
 
 function isSupabaseConfigured() {
-  return !!(SUPABASE_CONFIG.url && SUPABASE_CONFIG.key);
+  return true;
 }
 
 /**
