@@ -168,6 +168,82 @@ input[type="date"]:focus {
     box-shadow: 0 0 0 4px rgba(82, 183, 136, 0.12);
 }
 
+/* ===== 搜索框 ===== */
+.search-box {
+    position: relative;
+}
+
+.search-box .form-control {
+    padding-left: 36px;
+    border-radius: 20px;
+    background: #f8faf8;
+    border: 1.5px solid #e0e5e0;
+    font-size: 0.9rem;
+}
+
+.search-box .form-control:focus {
+    background: white;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(82, 183, 136, 0.12);
+}
+
+.search-box .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #a0a8a0;
+    font-size: 0.9rem;
+    pointer-events: none;
+}
+
+/* ===== 月份分组 ===== */
+.month-group {
+    border: 1px solid #e8ece8;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: white;
+}
+
+.month-header {
+    padding: 10px 14px;
+    background: #f8faf8;
+    cursor: pointer;
+    transition: background 0.2s;
+    user-select: none;
+}
+
+.month-header:hover {
+    background: #f0f4f0;
+}
+
+.month-header .month-arrow {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    transition: transform 0.2s;
+}
+
+.month-header .badge {
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.month-body {
+    padding: 4px;
+}
+
+.month-body .date-card {
+    margin: 4px;
+    box-shadow: none;
+    border: 1px solid #f0f2f0;
+}
+
+.month-body .date-card:hover {
+    border-color: var(--accent-light);
+}
+
 /* ===== 日期卡片 ===== */
 .date-card {
     border: none;

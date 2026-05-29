@@ -222,9 +222,112 @@ async function renderDatePage() {
     recentList.innerHTML = sorted.slice(0, 3).map(exp => dateCard(exp)).join('');
     recent.classList.remove('d-none');
 
-    // 全部列表
+    // 全部列表 - 按月分组
+    renderAllListByMonth(sorted);
+}
+
+function renderAllListByMonth(exps) {
     const allList = document.getElementById('allList');
-    allList.innerHTML = sorted.map(exp => dateCard(exp)).join('');
+    const collapsed = getCollapsedMonths();
+
+    // 按月份分组
+    const groups = {};
+    exps.forEach(exp => {
+        const month = exp.date.substring(0, 7); // "2026-05"
+        if (!groups[month]) groups[month] = [];
+        groups[month].push(exp);
+    });
+
+    // 获取最近一个月
+    const months = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+    const latestMonth = months[0];
+
+    let html = '';
+    months.forEach(month => {
+        const isCollapsed = collapsed.includes(month) && month !== latestMonth;
+        const monthExps = groups[month];
+        const [year, m] = month.split('-');
+        const monthLabel = `${year}年${parseInt(m)}月`;
+
+        html += `
+            <div class="month-group mb-2">
+                <div class="month-header d-flex align-items-center justify-content-between" onclick="toggleMonth('${month}')">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi ${isCollapsed ? 'bi-chevron-right' : 'bi-chevron-down'} month-arrow"></i>
+                        <span class="fw-bold">${monthLabel}</span>
+                        <span class="badge bg-secondary">${monthExps.length}</span>
+                    </div>
+                </div>
+                <div class="month-body ${isCollapsed ? 'd-none' : ''}" id="month-${month}">
+                    ${monthExps.map(exp => dateCard(exp)).join('')}
+                </div>
+            </div>`;
+    });
+
+    allList.innerHTML = html;
+}
+
+function getCollapsedMonths() {
+    try {
+        return JSON.parse(localStorage.getItem('collapsedMonths') || '[]');
+    } catch {
+        return [];
+    }
+}
+
+function saveCollapsedMonths(months) {
+    localStorage.setItem('collapsedMonths', JSON.stringify(months));
+}
+
+function toggleMonth(month) {
+    const collapsed = getCollapsedMonths();
+    const body = document.getElementById('month-' + month);
+    const header = body.previousElementSibling;
+    const arrow = header.querySelector('.month-arrow');
+
+    if (collapsed.includes(month)) {
+        // 展开
+        const idx = collapsed.indexOf(month);
+        collapsed.splice(idx, 1);
+        body.classList.remove('d-none');
+        arrow.classList.replace('bi-chevron-right', 'bi-chevron-down');
+    } else {
+        // 折叠
+        collapsed.push(month);
+        body.classList.add('d-none');
+        arrow.classList.replace('bi-chevron-down', 'bi-chevron-right');
+    }
+
+    saveCollapsedMonths(collapsed);
+}
+
+function onSearchInput() {
+    const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+    const allList = document.getElementById('allList');
+
+    if (!keyword) {
+        // 恢复分组视图
+        getAllExperiments().then(exps => {
+            const sorted = exps.sort((a, b) => new Date(b.date) - new Date(a.date));
+            renderAllListByMonth(sorted);
+        });
+        return;
+    }
+
+    // 搜索过滤
+    getAllExperiments().then(exps => {
+        const filtered = exps.filter(exp => {
+            const name = (exp.name || '').toLowerCase();
+            const date = exp.date.toLowerCase();
+            return name.includes(keyword) || date.includes(keyword);
+        });
+
+        if (filtered.length === 0) {
+            allList.innerHTML = '<div class="text-center py-3 text-muted"><small>没有找到匹配的试验</small></div>';
+        } else {
+            allList.innerHTML = filtered.map(exp => dateCard(exp)).join('');
+        }
+    });
 }
 
 function todayStr() {
