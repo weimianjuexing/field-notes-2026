@@ -21,10 +21,12 @@
     <div id="loginPage" class="d-none">
         <div class="login-container">
             <div class="login-card">
+                <div class="login-icon">
+                    <i class="bi bi-flower1"></i>
+                </div>
                 <div class="text-center mb-4">
-                    <i class="bi bi-flower1 text-success" style="font-size:3rem;"></i>
-                    <h4 class="mt-2">田间试验数据</h4>
-                    <small class="text-muted">请登录后使用</small>
+                    <h4>田间试验数据</h4>
+                    <small class="text-muted">登录后开始记录</small>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">账号</label>
@@ -36,12 +38,15 @@
                     <input type="password" class="form-control" id="loginPass" placeholder="请输入密码"
                            onkeydown="if(event.key==='Enter')handleLogin()">
                 </div>
-                <div id="loginError" class="alert alert-danger py-2 d-none">
+                <div id="loginError" class="alert alert-danger py-2 d-none" style="border-radius:10px;">
                     账号或密码错误
                 </div>
-                <button class="btn btn-success w-100" onclick="handleLogin()">
+                <button class="btn btn-success w-100 mt-1" onclick="handleLogin()">
                     <i class="bi bi-box-arrow-in-right"></i> 登录
                 </button>
+                <div class="text-center mt-3">
+                    <small class="text-muted">三个账号数据互相独立</small>
+                </div>
             </div>
         </div>
     </div>
@@ -102,9 +107,10 @@
             </div>
 
             <!-- 空状态 -->
-            <div id="emptyDate" class="text-center py-4 d-none">
-                <i class="bi bi-calendar-plus fs-1 text-muted"></i>
-                <p class="text-muted mt-2 mb-0">选择日期开始录入数据</p>
+            <div id="emptyDate" class="empty-state d-none">
+                <i class="bi bi-calendar-plus"></i>
+                <p class="mb-2">还没有试验数据</p>
+                <small class="text-muted">点击下方 + 按钮创建第一个试验</small>
             </div>
         </div>
 
@@ -221,27 +227,21 @@
             <!-- 统计 -->
             <div class="row g-2 mb-3" id="uploadStats" style="display:none">
                 <div class="col-4">
-                    <div class="card text-center bg-light">
-                        <div class="card-body p-2">
-                            <div class="fs-4 fw-bold text-success" id="ulLocalDates">0</div>
-                            <small class="text-muted">本地试验</small>
-                        </div>
+                    <div class="stat-card">
+                        <div class="stat-value text-success" id="ulLocalDates">0</div>
+                        <div class="stat-label">本地试验</div>
                     </div>
                 </div>
                 <div class="col-4">
-                    <div class="card text-center bg-light">
-                        <div class="card-body p-2">
-                            <div class="fs-4 fw-bold text-primary" id="ulCloudDates">0</div>
-                            <small class="text-muted">云端试验</small>
-                        </div>
+                    <div class="stat-card">
+                        <div class="stat-value text-primary" id="ulCloudDates">0</div>
+                        <div class="stat-label">云端试验</div>
                     </div>
                 </div>
                 <div class="col-4">
-                    <div class="card text-center bg-light">
-                        <div class="card-body p-2">
-                            <div class="fs-4 fw-bold text-info" id="ulRecords">0</div>
-                            <small class="text-muted">数据项</small>
-                        </div>
+                    <div class="stat-card">
+                        <div class="stat-value text-info" id="ulRecords">0</div>
+                        <div class="stat-label">数据项</div>
                     </div>
                 </div>
             </div>
@@ -309,7 +309,7 @@
     </main>
 
     <!-- 底部导航栏 -->
-    <nav class="navbar navbar-dark bg-white fixed-bottom border-top shadow-sm">
+    <nav class="navbar navbar-dark bg-white fixed-bottom border-top">
         <div class="container-fluid justify-content-around">
             <button class="btn text-success" onclick="showPage('pageDate')">
                 <i class="bi bi-calendar3-fill fs-5"></i><br><small>日期</small>
@@ -317,7 +317,7 @@
             <button class="btn text-muted" onclick="showPage('pageUpload')">
                 <i class="bi bi-cloud-arrow-up-fill fs-5"></i><br><small>同步</small>
             </button>
-            <button class="btn btn-success rounded-circle p-3 mx-2 shadow" onclick="quickStart()" style="margin-top: -20px;">
+            <button class="btn btn-success rounded-circle p-3 mx-2" onclick="quickStart()" style="margin-top: -24px; width:56px; height:56px;">
                 <i class="bi bi-plus-lg fs-4"></i>
             </button>
             <button class="btn text-muted" onclick="showAbout()">

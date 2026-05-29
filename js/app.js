@@ -237,24 +237,24 @@ function dateCard(exp) {
     const display = exp.date.split('-').slice(1).join('/');
     return `
         <div class="card date-card">
-            <div class="card-body py-2 px-3">
+            <div class="card-body py-3 px-3">
                 <div class="d-flex align-items-center" onclick="selectExperiment(${exp.id})">
                     <div class="date-badge text-center me-3">
                         <div class="date-day">${display}</div>
                         <div class="date-weekday">周${wd}</div>
                     </div>
                     <div class="flex-fill">
-                        <div class="fw-bold">${exp.name || '田间试验'}</div>
-                        <small class="text-muted">${exp.treatments.join('/')} · ${exp.replicates}次重复</small>
+                        <div class="fw-bold" style="font-size:1rem;">${exp.name || '田间试验'}</div>
+                        <small class="text-muted">${exp.treatments.join(' / ')} · ${exp.replicates}次重复</small>
                     </div>
-                    <i class="bi bi-chevron-right text-muted"></i>
+                    <i class="bi bi-chevron-right" style="color:#c0c8c0;"></i>
                 </div>
-                <div class="d-flex gap-1 mt-1">
-                    <button class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="event.stopPropagation(); editExperiment(${exp.id})" title="编辑">
-                        <i class="bi bi-pencil small"></i>
+                <div class="d-flex gap-2 mt-2">
+                    <button class="btn btn-sm btn-outline-secondary py-1 px-2" onclick="event.stopPropagation(); editExperiment(${exp.id})" title="编辑" style="font-size:0.75rem;">
+                        <i class="bi bi-pencil"></i> 编辑
                     </button>
-                    <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="event.stopPropagation(); confirmDeleteExp(${exp.id})" title="删除">
-                        <i class="bi bi-trash small"></i>
+                    <button class="btn btn-sm btn-outline-danger py-1 px-2" onclick="event.stopPropagation(); confirmDeleteExp(${exp.id})" title="删除" style="font-size:0.75rem;">
+                        <i class="bi bi-trash"></i> 删除
                     </button>
                 </div>
             </div>
@@ -324,13 +324,13 @@ async function onDateSelected() {
 function showExpsForDate(date, exps) {
     const list = exps.map(exp =>
         `<div class="card date-card mb-2" onclick="selectExperiment(${exp.id})">
-            <div class="card-body py-2 px-3">
+            <div class="card-body py-3 px-3">
                 <div class="d-flex align-items-center">
                     <div class="flex-fill">
-                        <div class="fw-bold">${exp.name || '田间试验'}</div>
-                        <small class="text-muted">${exp.treatments.join('/')} · ${exp.replicates}次重复</small>
+                        <div class="fw-bold" style="font-size:1rem;">${exp.name || '田间试验'}</div>
+                        <small class="text-muted">${exp.treatments.join(' / ')} · ${exp.replicates}次重复</small>
                     </div>
-                    <i class="bi bi-chevron-right text-muted"></i>
+                    <i class="bi bi-chevron-right" style="color:#c0c8c0;"></i>
                 </div>
             </div>
         </div>`
