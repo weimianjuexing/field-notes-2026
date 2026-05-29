@@ -1,4 +1,4 @@
-const CACHE_NAME = 'field-recorder-v1';
+const CACHE_NAME = 'field-recorder-v2';
 const ASSETS = [
   'index.html',
   'css/style.css',
