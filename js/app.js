@@ -125,38 +125,109 @@ function dateCard(exp) {
     const wd = weekdays[day.getDay()];
     const display = exp.date.split('-').slice(1).join('/');
     return `
-        <div class="card date-card" onclick="selectExperiment(${exp.id})">
+        <div class="card date-card">
             <div class="card-body py-2 px-3">
-                <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center" onclick="selectExperiment(${exp.id})">
                     <div class="date-badge text-center me-3">
                         <div class="date-day">${display}</div>
                         <div class="date-weekday">周${wd}</div>
                     </div>
                     <div class="flex-fill">
                         <div class="fw-bold">${exp.name || '田间试验'}</div>
-                        <small class="text-muted">${exp.treatments.length} 个处理 × ${exp.replicates} 次重复</small>
+                        <small class="text-muted">${exp.treatments.join('/')} · ${exp.replicates}次重复</small>
                     </div>
                     <i class="bi bi-chevron-right text-muted"></i>
+                </div>
+                <div class="d-flex gap-1 mt-1">
+                    <button class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="event.stopPropagation(); editExperiment(${exp.id})" title="编辑">
+                        <i class="bi bi-pencil small"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="event.stopPropagation(); confirmDeleteExp(${exp.id})" title="删除">
+                        <i class="bi bi-trash small"></i>
+                    </button>
                 </div>
             </div>
         </div>`;
 }
 
-// ===== 日期选择 → 自动判断 =====
+// ===== 编辑试验 =====
+async function editExperiment(id) {
+    const exp = await getExperiment(id);
+    if (!exp) return;
+    currentExperimentId = id;
+    document.getElementById('setupDateLabel').textContent = exp.date + ' (编辑)';
+    document.getElementById('newName').value = exp.name || '';
+    document.getElementById('newTreatments').value = exp.treatments.join('\n');
+    document.getElementById('newReplicates').value = exp.replicates;
+    document.getElementById('btnCreateExp').textContent = '保存修改';
+    document.getElementById('btnCreateExp').onclick = saveEditExperiment;
+    new bootstrap.Modal(document.getElementById('newDateModal')).show();
+}
+
+async function saveEditExperiment() {
+    const exp = await getExperiment(currentExperimentId);
+    if (!exp) return;
+    exp.name = document.getElementById('newName').value.trim();
+    exp.treatments = document.getElementById('newTreatments').value.trim().split('\n').map(s => s.trim()).filter(s => s);
+    exp.replicates = parseInt(document.getElementById('newReplicates').value) || 3;
+    if (exp.treatments.length === 0) { showToast('请填写处理', 'warning'); return; }
+    await updateExperiment(exp);
+    bootstrap.Modal.getInstance(document.getElementById('newDateModal')).hide();
+    document.getElementById('btnCreateExp').textContent = '创建并进入';
+    document.getElementById('btnCreateExp').onclick = createNewDate;
+    showToast('已保存', 'success');
+    renderDatePage();
+}
+
+// ===== 删除试验 =====
+function confirmDeleteExp(id) {
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    document.getElementById('confirmMessage').textContent = '确定删除这个试验？所有数据将丢失。';
+    document.getElementById('confirmBtn').onclick = async () => {
+        await deleteExperiment(id);
+        modal.hide();
+        showToast('已删除', 'success');
+        renderDatePage();
+    };
+    modal.show();
+}
+
+// ===== 日期选择 → 自动判断（支持同一天多个试验）=====
 async function onDateSelected() {
     const date = document.getElementById('selectedDate').value;
     if (!date) return;
 
     const exps = await getAllExperiments();
-    const existing = exps.find(e => e.date === date);
+    const existing = exps.filter(e => e.date === date);
 
-    if (existing) {
-        // 已有该日期的试验 → 直接进入
-        selectExperiment(existing.id);
+    if (existing.length === 1) {
+        selectExperiment(existing[0].id);
+    } else if (existing.length > 1) {
+        showExpsForDate(date, existing);
     } else {
-        // 没有 → 弹出快速设置
         showSetupModal(date);
     }
+}
+
+// ===== 显示某日期的所有试验 =====
+function showExpsForDate(date, exps) {
+    const list = exps.map(exp =>
+        `<div class="card date-card mb-2" onclick="selectExperiment(${exp.id})">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex align-items-center">
+                    <div class="flex-fill">
+                        <div class="fw-bold">${exp.name || '田间试验'}</div>
+                        <small class="text-muted">${exp.treatments.join('/')} · ${exp.replicates}次重复</small>
+                    </div>
+                    <i class="bi bi-chevron-right text-muted"></i>
+                </div>
+            </div>
+        </div>`
+    ).join('');
+
+    document.getElementById('dateExpList').innerHTML = list;
+    document.getElementById('btnAddExpForDate').onclick = () => showSetupModal(date);
+    new bootstrap.Modal(document.getElementById('dateExpModal')).show();
 }
 
 // ===== 快速设置弹窗 =====
@@ -172,12 +243,14 @@ function showSetupModal(date) {
 async function quickStart() {
     const date = document.getElementById('selectedDate').value || todayStr();
     const exps = await getAllExperiments();
-    const existing = exps.find(e => e.date === date);
+    const existing = exps.filter(e => e.date === date);
 
     showPage('pageDate');
 
-    if (existing) {
-        selectExperiment(existing.id);
+    if (existing.length === 1) {
+        selectExperiment(existing[0].id);
+    } else if (existing.length > 1) {
+        showExpsForDate(date, existing);
     } else {
         showSetupModal(date);
     }
@@ -220,7 +293,7 @@ async function selectExperiment(id) {
 
     document.getElementById('currentDateLabel').textContent = exp.date + ' ' + (exp.name || '田间试验');
     document.getElementById('currentExperimentInfo').textContent =
-        `${exp.treatments.length} 个处理，${exp.replicates} 次重复 — 选择要录入的内容`;
+        `${exp.treatments.join('/')} · ${exp.replicates}次重复`;
 
     const grid = document.getElementById('testTypeGrid');
 
@@ -253,6 +326,40 @@ async function selectExperiment(id) {
     showPage('pageTestType');
 }
 
+// ===== 分享整个试验数据 =====
+async function shareAllData() {
+    const exp = await getExperiment(currentExperimentId);
+    if (!exp) return;
+    const entries = await getAllDataEntries(currentExperimentId);
+    if (entries.length === 0) { showToast('没有数据可分享', 'warning'); return; }
+
+    let text = `${exp.date} ${exp.name || '试验'}\n${'═'.repeat(35)}\n`;
+
+    for (const entry of entries) {
+        const tt = TEST_TYPES.find(t => t.id === entry.testType);
+        if (!tt) continue;
+        text += `\n【${tt.label}】${tt.unit ? '(' + tt.unit + ')' : ''}\n`;
+        let header = '处理'.padEnd(8);
+        for (let r = 1; r <= exp.replicates; r++) header += `重复${r}`.padStart(8);
+        text += header + '\n';
+        for (let ti = 0; ti < exp.treatments.length; ti++) {
+            let row = exp.treatments[ti].padEnd(8);
+            for (let r = 0; r < exp.replicates; r++) {
+                const val = entry.values[ti] && entry.values[ti][r] != null ? String(entry.values[ti][r]) : '-';
+                row += val.padStart(8);
+            }
+            text += row + '\n';
+        }
+    }
+
+    if (navigator.share) {
+        try { await navigator.share({ title: `${exp.date} ${exp.name}`, text }); showToast('已分享', 'success'); return; }
+        catch (e) { if (e.name === 'AbortError') return; }
+    }
+    try { await navigator.clipboard.writeText(text); showToast('已复制到剪贴板', 'success'); }
+    catch (e) { prompt('复制以下内容：', text); }
+}
+
 // ===== 选择测试内容 → 进入数据录入 =====
 async function selectTestType(testType) {
     currentTestType = testType;
@@ -263,9 +370,30 @@ async function selectTestType(testType) {
     document.getElementById('entryTestType').textContent = tt.label + (tt.unit ? ` (${tt.unit})` : '');
     document.getElementById('entryHeader').textContent = tt.label;
 
-    // 构建表格
+    // 深度选择器（土壤相关指标）
+    const depthGroup = document.getElementById('depthGroup');
+    const depthSelect = document.getElementById('depthSelect');
+    const soilTypes = ['bulkDensity', 'soilPh', 'porosity', 'soilMoisture', 'soc', 'poxc', 'availN', 'availP', 'availK', 'mbc', 'mbn'];
+    if (soilTypes.includes(testType)) {
+        depthGroup.classList.remove('d-none');
+        depthSelect.value = 'none';
+    } else {
+        depthGroup.classList.add('d-none');
+    }
+
+    // 备注
+    const entry = await getDataEntry(currentExperimentId, testType);
+    document.getElementById('entryNotes').value = entry ? (entry.notes || '') : '';
+
+    renderEntryTable(exp, entry);
+    showPage('pageEntry');
+}
+
+// 渲染表格
+async function renderEntryTable(exp, entry) {
     const thead = document.getElementById('entryTableHead');
     const tbody = document.getElementById('entryTableBody');
+    const depth = document.getElementById('depthSelect') ? document.getElementById('depthSelect').value : 'none';
 
     let headerHTML = '<th class="tmt-th">处理 \\ 重复</th>';
     for (let r = 1; r <= exp.replicates; r++) {
@@ -273,10 +401,7 @@ async function selectTestType(testType) {
     }
     thead.innerHTML = headerHTML;
 
-    // 读取已有数据
-    const entry = await getDataEntry(currentExperimentId, testType);
     const values = entry ? entry.values : [];
-
     tbody.innerHTML = exp.treatments.map((t, ti) => {
         let rowHTML = `<td class="tmt-td fw-medium">${t}</td>`;
         for (let r = 0; r < exp.replicates; r++) {
@@ -287,8 +412,14 @@ async function selectTestType(testType) {
         }
         return `<tr>${rowHTML}</tr>`;
     }).join('');
+}
 
-    showPage('pageEntry');
+// 深度变化
+async function onDepthChange() {
+    const exp = await getExperiment(currentExperimentId);
+    const depth = document.getElementById('depthSelect').value;
+    const entry = await getDataEntry(currentExperimentId, currentTestType);
+    renderEntryTable(exp, entry);
 }
 
 // ===== 单元格变化 =====
@@ -312,10 +443,13 @@ async function saveEntryData(silent) {
         }
     }
 
+    const notes = document.getElementById('entryNotes').value.trim();
+
     await saveDataEntry({
         experimentId: currentExperimentId,
         testType: currentTestType,
-        values
+        values,
+        notes
     });
 
     if (!silent) showToast('数据已保存', 'success');
