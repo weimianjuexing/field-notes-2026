@@ -321,6 +321,65 @@ async function saveEntryData(silent) {
     if (!silent) showToast('数据已保存', 'success');
 }
 
+// ===== 分享当前数据 =====
+async function shareEntryData() {
+    const exp = await getExperiment(currentExperimentId);
+    const tt = TEST_TYPES.find(t => t.id === currentTestType);
+    const entry = await getDataEntry(currentExperimentId, currentTestType);
+
+    if (!entry || !entry.values || entry.values.length === 0) {
+        showToast('没有数据可分享', 'warning');
+        return;
+    }
+
+    // 生成文本表格
+    let text = `${exp.date} ${exp.name || ''} - ${tt.label}\n`;
+    text += `${'─'.repeat(30)}\n`;
+
+    // 表头
+    let header = '处理'.padEnd(8);
+    for (let r = 1; r <= exp.replicates; r++) {
+        header += `重复${r}`.padStart(8);
+    }
+    text += header + '\n';
+
+    // 数据行
+    for (let ti = 0; ti < exp.treatments.length; ti++) {
+        let row = exp.treatments[ti].padEnd(8);
+        for (let r = 0; r < exp.replicates; r++) {
+            const val = entry.values[ti] && entry.values[ti][r] != null
+                ? String(entry.values[ti][r]) : '-';
+            row += val.padStart(8);
+        }
+        text += row + '\n';
+    }
+
+    if (tt.unit) text += `\n单位: ${tt.unit}`;
+
+    // 尝试原生分享
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: `${exp.date} ${tt.label}`,
+                text: text
+            });
+            showToast('已分享', 'success');
+            return;
+        } catch (e) {
+            if (e.name === 'AbortError') return; // 用户取消
+        }
+    }
+
+    // 降级：复制到剪贴板
+    try {
+        await navigator.clipboard.writeText(text);
+        showToast('已复制到剪贴板', 'success');
+    } catch (e) {
+        // 再降级：弹窗显示
+        prompt('复制以下内容分享：', text);
+    }
+}
+
 // ===== 清空当前页 =====
 function confirmClearEntry() {
     const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
