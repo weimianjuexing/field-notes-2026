@@ -1,6 +1,72 @@
 // 全局状态
 let currentExperimentId = null;
 let currentTestType = null;
+let currentUser = null;
+
+// ===== 账号配置 =====
+const ACCOUNTS = [
+    { user: 'qinxian1', pass: '123456' },
+    { user: 'qinxian2', pass: '123456' },
+    { user: 'qinxian3', pass: '123456' },
+];
+
+function getCurrentUser() {
+    return currentUser || localStorage.getItem('field_user');
+}
+
+function isLoggedIn() {
+    return !!getCurrentUser();
+}
+
+function doLogin(username, password) {
+    const acc = ACCOUNTS.find(a => a.user === username && a.pass === password);
+    if (!acc) return false;
+    currentUser = acc.user;
+    localStorage.setItem('field_user', acc.user);
+    return true;
+}
+
+function doLogout() {
+    currentUser = null;
+    localStorage.removeItem('field_user');
+    showLoginUI();
+}
+
+function checkLogin() {
+    const saved = localStorage.getItem('field_user');
+    if (saved && ACCOUNTS.some(a => a.user === saved)) {
+        currentUser = saved;
+        showMainUI();
+        return true;
+    }
+    showLoginUI();
+    return false;
+}
+
+function showLoginUI() {
+    document.getElementById('loginPage').classList.remove('d-none');
+    document.getElementById('mainApp').classList.add('d-none');
+    document.getElementById('loginError').classList.add('d-none');
+    document.getElementById('loginUser').value = '';
+    document.getElementById('loginPass').value = '';
+}
+
+function showMainUI() {
+    document.getElementById('loginPage').classList.add('d-none');
+    document.getElementById('mainApp').classList.remove('d-none');
+    document.getElementById('currentUserLabel').textContent = getCurrentUser();
+}
+
+function handleLogin() {
+    const user = document.getElementById('loginUser').value.trim();
+    const pass = document.getElementById('loginPass').value.trim();
+    if (doLogin(user, pass)) {
+        showMainUI();
+        initApp();
+    } else {
+        document.getElementById('loginError').classList.remove('d-none');
+    }
+}
 
 // ===== 测试内容配置（按你的模板分类）=====
 const TEST_TYPES = [
@@ -60,11 +126,17 @@ const TEST_TYPES = [
 ];
 
 // ===== 页面加载 =====
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
+    if (checkLogin()) {
+        initApp();
+    }
+});
+
+async function initApp() {
     await initDB();
     initSupabaseConfig();
     renderDatePage();
-});
+}
 
 // ===== 页面切换 =====
 function showPage(pageId) {
@@ -268,7 +340,7 @@ async function createNewDate() {
     if (treatments.length === 0) { showToast('请填写至少一个处理', 'warning'); return; }
     if (isNaN(replicates) || replicates < 1) { showToast('重复次数至少为1', 'warning'); return; }
 
-    const newId = await createExperiment({ date, name, treatments, replicates });
+    const newId = await createExperiment({ date, name, treatments, replicates, user: getCurrentUser() });
     bootstrap.Modal.getInstance(document.getElementById('newDateModal')).hide();
     showToast('试验已创建', 'success');
     renderDatePage();
@@ -449,7 +521,8 @@ async function saveEntryData(silent) {
         experimentId: currentExperimentId,
         testType: currentTestType,
         values,
-        notes
+        notes,
+        user: getCurrentUser()
     });
 
     if (!silent) showToast('数据已保存', 'success');
@@ -708,7 +781,8 @@ async function uploadAll() {
 async function syncFromCloud() {
     try {
         const cloudRecords = await downloadRecords();
-        if (cloudRecords.length === 0) {
+        const userRecords = cloudRecords.filter(r => r.user === getCurrentUser());
+        if (userRecords.length === 0) {
             addUploadLog('ℹ 云端无数据');
             return;
         }
@@ -716,7 +790,7 @@ async function syncFromCloud() {
         let added = 0, updated = 0;
         const localExps = await getAllExperiments();
 
-        for (const cr of cloudRecords) {
+        for (const cr of userRecords) {
             const localExp = localExps.find(e => e.date === cr.date &&
                 (!cr.expName || e.name === cr.expName));
             if (localExp) {
@@ -728,7 +802,8 @@ async function syncFromCloud() {
                         await saveDataEntry({
                             experimentId: localExp.id,
                             testType: cr.testType,
-                            values: cr.values
+                            values: cr.values,
+                            user: getCurrentUser()
                         });
                         updated++;
                     }
@@ -736,7 +811,8 @@ async function syncFromCloud() {
                     await saveDataEntry({
                         experimentId: localExp.id,
                         testType: cr.testType,
-                        values: cr.values
+                        values: cr.values,
+                        user: getCurrentUser()
                     });
                     added++;
                 }
@@ -746,12 +822,14 @@ async function syncFromCloud() {
                     date: cr.date,
                     name: cr.expName || '',
                     treatments: cr.treatments || ['处理1', '处理2'],
-                    replicates: cr.replicates || 3
+                    replicates: cr.replicates || 3,
+                    user: getCurrentUser()
                 });
                 await saveDataEntry({
                     experimentId: newExpId,
                     testType: cr.testType,
-                    values: cr.values
+                    values: cr.values,
+                    user: getCurrentUser()
                 });
                 added++;
             }
@@ -776,7 +854,8 @@ function serializeForCloud(exp, entry) {
         testUnit: tt ? tt.unit : '',
         values: entry.values,
         createdAt: entry.createdAt,
-        updatedAt: entry.updatedAt
+        updatedAt: entry.updatedAt,
+        user: getCurrentUser()
     };
 }
 

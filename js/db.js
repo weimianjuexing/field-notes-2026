@@ -23,6 +23,7 @@ function initDB() {
             if (!database.objectStoreNames.contains(STORE_EXPERIMENTS)) {
                 const store = database.createObjectStore(STORE_EXPERIMENTS, { keyPath: 'id', autoIncrement: true });
                 store.createIndex('date', 'date', { unique: false });
+                store.createIndex('user', 'user', { unique: false });
             }
 
             if (!database.objectStoreNames.contains(STORE_ENTRIES)) {
@@ -30,6 +31,7 @@ function initDB() {
                 store.createIndex('experimentId', 'experimentId', { unique: false });
                 store.createIndex('testType', 'testType', { unique: false });
                 store.createIndex('experiment_testType', ['experimentId', 'testType'], { unique: true });
+                store.createIndex('user', 'user', { unique: false });
             }
         };
     });
@@ -82,9 +84,11 @@ async function deleteExperiment(id) {
 
 async function getAllExperiments() {
     const database = await initDB();
+    const user = getCurrentUser();
     return new Promise((resolve, reject) => {
         const tx = database.transaction([STORE_EXPERIMENTS], 'readonly');
-        const req = tx.objectStore(STORE_EXPERIMENTS).getAll();
+        const idx = tx.objectStore(STORE_EXPERIMENTS).index('user');
+        const req = idx.getAll(user);
         req.onsuccess = () => {
             const list = req.result.sort((a, b) => new Date(b.date) - new Date(a.date));
             resolve(list);
@@ -98,7 +102,14 @@ async function getExperiment(id) {
     return new Promise((resolve, reject) => {
         const tx = database.transaction([STORE_EXPERIMENTS], 'readonly');
         const req = tx.objectStore(STORE_EXPERIMENTS).get(id);
-        req.onsuccess = () => resolve(req.result);
+        req.onsuccess = () => {
+            const exp = req.result;
+            if (exp && exp.user !== getCurrentUser()) {
+                resolve(null);
+            } else {
+                resolve(exp);
+            }
+        };
         req.onerror = () => reject(new Error('获取试验失败'));
     });
 }
@@ -141,7 +152,14 @@ async function getDataEntry(experimentId, testType) {
         const store = tx.objectStore(STORE_ENTRIES);
         const idx = store.index('experiment_testType');
         const req = idx.get([experimentId, testType]);
-        req.onsuccess = () => resolve(req.result || null);
+        req.onsuccess = () => {
+            const entry = req.result || null;
+            if (entry && entry.user && entry.user !== getCurrentUser()) {
+                resolve(null);
+            } else {
+                resolve(entry);
+            }
+        };
         req.onerror = () => reject(new Error('获取数据失败'));
     });
 }
@@ -153,7 +171,11 @@ async function getAllDataEntries(experimentId) {
         const store = tx.objectStore(STORE_ENTRIES);
         const idx = store.index('experimentId');
         const req = idx.getAll(experimentId);
-        req.onsuccess = () => resolve(req.result || []);
+        req.onsuccess = () => {
+            const user = getCurrentUser();
+            const filtered = (req.result || []).filter(e => !e.user || e.user === user);
+            resolve(filtered);
+        };
         req.onerror = () => reject(new Error('获取数据列表失败'));
     });
 }

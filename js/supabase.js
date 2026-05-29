@@ -92,7 +92,8 @@ async function uploadRecords(records, onProgress) {
         values: r.values || [],
         created_at: r.createdAt || new Date().toISOString(),
         updated_at: r.updatedAt || new Date().toISOString(),
-        device_id: deviceId
+        device_id: deviceId,
+        user: r.user || ''
       };
 
       const { error } = await client
@@ -116,11 +117,13 @@ async function downloadRecords() {
   if (!client) throw new Error('Supabase 未配置');
 
   const deviceId = getDeviceId();
+  const user = getCurrentUser();
 
   const { data, error } = await client
     .from(TABLE_NAME)
     .select('*')
     .eq('device_id', deviceId)
+    .eq('user', user)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -136,7 +139,8 @@ async function downloadRecords() {
     testUnit: r.test_unit || '',
     values: r.values || [],
     createdAt: r.created_at,
-    updatedAt: r.updated_at
+    updatedAt: r.updated_at,
+    user: r.user || ''
   }));
 }
 
@@ -147,10 +151,12 @@ async function getCloudCount() {
   const client = initSupabase();
   if (!client) return 0;
   const deviceId = getDeviceId();
+  const user = getCurrentUser();
   const { count, error } = await client
     .from(TABLE_NAME)
     .select('*', { count: 'exact', head: true })
-    .eq('device_id', deviceId);
+    .eq('device_id', deviceId)
+    .eq('user', user);
   if (error) return 0;
   return count || 0;
 }

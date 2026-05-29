@@ -17,6 +17,37 @@
     <link href="css/style.css" rel="stylesheet">
 </head>
 <body>
+    <!-- 登录页面 -->
+    <div id="loginPage" class="d-none">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="text-center mb-4">
+                    <i class="bi bi-flower1 text-success" style="font-size:3rem;"></i>
+                    <h4 class="mt-2">田间试验数据</h4>
+                    <small class="text-muted">请登录后使用</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">账号</label>
+                    <input type="text" class="form-control" id="loginUser" placeholder="请输入账号"
+                           onkeydown="if(event.key==='Enter')handleLogin()">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">密码</label>
+                    <input type="password" class="form-control" id="loginPass" placeholder="请输入密码"
+                           onkeydown="if(event.key==='Enter')handleLogin()">
+                </div>
+                <div id="loginError" class="alert alert-danger py-2 d-none">
+                    账号或密码错误
+                </div>
+                <button class="btn btn-success w-100" onclick="handleLogin()">
+                    <i class="bi bi-box-arrow-in-right"></i> 登录
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主应用 -->
+    <div id="mainApp" class="d-none">
     <!-- 顶部导航栏 -->
     <nav class="navbar navbar-dark bg-success fixed-top">
         <div class="container-fluid">
@@ -24,9 +55,13 @@
                 <i class="bi bi-flower1"></i> 田间试验数据
             </span>
             <div class="d-flex align-items-center gap-2">
+                <span id="currentUserLabel" class="text-white small"></span>
                 <span id="syncStatus" class="sync-status" title="云端状态">
                     <i class="bi bi-cloud"></i>
                 </span>
+                <button class="btn btn-sm btn-outline-light" onclick="doLogout()" title="退出登录">
+                    <i class="bi bi-box-arrow-right"></i>
+                </button>
             </div>
         </div>
     </nav>
@@ -404,5 +439,6 @@
             navigator.serviceWorker.register('sw.js');
         }
     </script>
+    </div><!-- /mainApp -->
 </body>
 </html>
