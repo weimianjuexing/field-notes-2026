@@ -1007,8 +1007,11 @@ async function loadCloudData() {
 
             const testTypes = Object.keys(testGroups);
             
+            const isModified = expName.includes('修改版');
+            const cardClass = isModified ? 'bg-warning bg-opacity-10' : 'bg-success bg-opacity-10';
+            
             html += `
-                <div class="card mb-2">
+                <div class="card mb-2 ${cardClass}">
                     <div class="card-body py-2 px-3">
                         <div class="fw-bold">${date} ${expName}</div>
                         <div class="mt-1 d-flex flex-wrap gap-1">
