@@ -977,29 +977,40 @@ async function loadCloudData() {
             return;
         }
 
-        // 按试验类型分组
-        const groups = {};
+        // 先按实验分组（日期+名称）
+        const expGroups = {};
         userRecords.forEach(r => {
-            const type = r.testLabel || r.testType;
-            if (!groups[type]) groups[type] = [];
-            groups[type].push(r);
+            const expKey = `${r.date}|${r.expName || '田间试验'}`;
+            if (!expGroups[expKey]) expGroups[expKey] = [];
+            expGroups[expKey].push(r);
         });
 
         let html = '';
-        for (const [type, items] of Object.entries(groups)) {
-            const unit = items[0].testUnit || '';
+        for (const [expKey, items] of Object.entries(expGroups)) {
+            const [date, expName] = expKey.split('|');
+            
+            // 再按测试内容分组
+            const testGroups = {};
+            items.forEach(r => {
+                const testType = r.testLabel || r.testType;
+                if (!testGroups[testType]) testGroups[testType] = [];
+                testGroups[testType].push(r);
+            });
+
+            const testTypes = Object.keys(testGroups);
+            
             html += `
                 <div class="card mb-2">
                     <div class="card-body py-2 px-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <span class="fw-bold">${type}</span>
-                                ${unit ? `<small class="text-muted ms-1">(${unit})</small>` : ''}
-                            </div>
-                            <span class="badge bg-secondary">${items.length}条</span>
+                        <div class="fw-bold">${date} ${expName}</div>
+                        <div class="mt-1 d-flex flex-wrap gap-1">
+                            ${testTypes.map(t => {
+                                const unit = testGroups[t][0].testUnit || '';
+                                return `<span class="badge bg-light text-dark border">${t}${unit ? ` (${unit})` : ''}</span>`;
+                            }).join('')}
                         </div>
                         <div class="mt-1">
-                            <small class="text-muted">${items.map(i => i.date).join(', ')}</small>
+                            <small class="text-muted">${items.length}条数据</small>
                         </div>
                     </div>
                 </div>`;
