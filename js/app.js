@@ -602,7 +602,13 @@ async function selectTestType(testType) {
 
     document.getElementById('entryDateLabel').textContent = exp.date;
     document.getElementById('entryTestType').textContent = tt.label + (tt.unit ? ` (${tt.unit})` : '');
-    document.getElementById('entryHeader').textContent = tt.label;
+    
+    // 显示修改版标识
+    const header = tt.label;
+    const isModified = exp.name && exp.name.includes('修改版');
+    document.getElementById('entryHeader').innerHTML = isModified 
+        ? `${header} <span class="badge bg-warning text-dark" style="font-size:0.7rem;">修改版</span>`
+        : header;
 
     // 深度选择器（土壤相关指标）
     const depthGroup = document.getElementById('depthGroup');
@@ -967,7 +973,7 @@ let _cloudRecords = [];
 
 async function loadCloudData() {
     const list = document.getElementById('cloudDataList');
-    list.innerHTML = '<div class="text-center py-2"><small class="text-muted">加载中...</small></div>';
+    list.innerHTML = '<div class="text-center py-3 loading-text"><div class="loading-spinner"></div><small class="text-muted">加载云端数据...</small></div>';
 
     try {
         const records = await downloadRecords();
@@ -1009,7 +1015,7 @@ async function loadCloudData() {
                             ${testTypes.map(t => {
                                 const unit = testGroups[t][0].testUnit || '';
                                 const record = testGroups[t][0];
-                                return `<span class="badge bg-light text-dark border" style="cursor:pointer" 
+                                return `<span class="badge bg-light text-dark border cloud-tag" 
                                     onclick="editCloudData('${date}','${expName}','${record.testType}')">${t}${unit ? ` (${unit})` : ''}</span>`;
                             }).join('')}
                         </div>
@@ -1067,7 +1073,7 @@ async function editCloudData(date, expName, testType) {
     currentExperimentId = targetExp.id;
     currentTestType = record.testType;
     await selectTestType(record.testType);
-    showToast('已创建修改版，可编辑后保存', 'info');
+    showToast(`已创建修改版：${modifiedName}，修改后点保存`, 'info');
 }
 
 // ===== 一键上传+下载 =====

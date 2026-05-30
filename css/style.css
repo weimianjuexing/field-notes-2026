@@ -168,6 +168,45 @@ input[type="date"]:focus {
     box-shadow: 0 0 0 4px rgba(82, 183, 136, 0.12);
 }
 
+/* ===== 加载动画 ===== */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e0e5e0;
+    border-radius: 50%;
+    border-top-color: var(--accent);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* ===== 云端数据标签 ===== */
+.cloud-tag {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cloud-tag:hover {
+    background-color: var(--accent) !important;
+    color: white !important;
+    border-color: var(--accent) !important;
+    transform: translateY(-1px);
+}
+
+.cloud-tag:active {
+    transform: translateY(0);
+}
+
 /* ===== 搜索框 ===== */
 .search-box {
     position: relative;
