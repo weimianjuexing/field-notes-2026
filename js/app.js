@@ -963,6 +963,8 @@ async function updateUploadUI() {
     }
 }
 
+let _cloudRecords = [];
+
 async function loadCloudData() {
     const list = document.getElementById('cloudDataList');
     list.innerHTML = '<div class="text-center py-2"><small class="text-muted">加载中...</small></div>';
@@ -970,16 +972,16 @@ async function loadCloudData() {
     try {
         const records = await downloadRecords();
         const user = getCurrentUser();
-        const userRecords = records.filter(r => r.user === user);
+        _cloudRecords = records.filter(r => r.user === user);
 
-        if (userRecords.length === 0) {
+        if (_cloudRecords.length === 0) {
             list.innerHTML = '<div class="text-center py-2"><small class="text-muted">暂无云端数据</small></div>';
             return;
         }
 
         // 先按实验分组（日期+名称）
         const expGroups = {};
-        userRecords.forEach(r => {
+        _cloudRecords.forEach(r => {
             const expKey = `${r.date}|${r.expName || '田间试验'}`;
             if (!expGroups[expKey]) expGroups[expKey] = [];
             expGroups[expKey].push(r);
@@ -1006,7 +1008,9 @@ async function loadCloudData() {
                         <div class="mt-1 d-flex flex-wrap gap-1">
                             ${testTypes.map(t => {
                                 const unit = testGroups[t][0].testUnit || '';
-                                return `<span class="badge bg-light text-dark border">${t}${unit ? ` (${unit})` : ''}</span>`;
+                                const record = testGroups[t][0];
+                                return `<span class="badge bg-light text-dark border" style="cursor:pointer" 
+                                    onclick="editCloudData('${date}','${expName}','${record.testType}')">${t}${unit ? ` (${unit})` : ''}</span>`;
                             }).join('')}
                         </div>
                         <div class="mt-1">
@@ -1020,6 +1024,50 @@ async function loadCloudData() {
     } catch (e) {
         list.innerHTML = `<div class="text-center py-2"><small class="text-danger">加载失败: ${e.message}</small></div>`;
     }
+}
+
+async function editCloudData(date, expName, testType) {
+    const record = _cloudRecords.find(r => 
+        r.date === date && 
+        (r.expName || '田间试验') === expName && 
+        r.testType === testType
+    );
+    
+    if (!record) {
+        showToast('未找到数据', 'warning');
+        return;
+    }
+
+    // 查找是否已有修改版实验
+    const allExps = await getAllExperiments();
+    const modifiedName = `${expName}_修改版`;
+    let targetExp = allExps.find(e => e.date === date && e.name === modifiedName);
+
+    if (!targetExp) {
+        // 创建新实验（修改版）
+        const newId = await createExperiment({
+            date: date,
+            name: modifiedName,
+            treatments: record.treatments || ['CK', 'T1', 'T2'],
+            replicates: record.replicates || 3,
+            user: getCurrentUser()
+        });
+        targetExp = await getExperiment(newId);
+    }
+
+    // 保存数据到修改版实验
+    await saveDataEntry({
+        experimentId: targetExp.id,
+        testType: record.testType,
+        values: record.values,
+        user: getCurrentUser()
+    });
+
+    // 跳转到数据录入页面
+    currentExperimentId = targetExp.id;
+    currentTestType = record.testType;
+    await selectTestType(record.testType);
+    showToast('已创建修改版，可编辑后保存', 'info');
 }
 
 // ===== 一键上传+下载 =====
