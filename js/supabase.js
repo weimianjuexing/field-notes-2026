@@ -148,3 +148,23 @@ async function getCloudCount() {
   if (error) return 0;
   return count || 0;
 }
+
+/**
+ * 提交反馈
+ */
+async function submitFeedbackToCloud(text, contact) {
+  const client = initSupabase();
+  if (!client) throw new Error('Supabase 未配置');
+
+  const { error } = await client
+    .from('feedback')
+    .insert({
+      username: getCurrentUser(),
+      content: text,
+      contact: contact || '',
+      created_at: new Date().toISOString()
+    });
+
+  if (error) throw error;
+  return true;
+}
