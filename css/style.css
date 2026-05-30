@@ -31,7 +31,7 @@ body {
 /* ===== 页面切换 ===== */
 .page {
     display: none;
-    animation: fadeSlideIn 0.3s ease;
+    animation: fadeSlideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .page.active {
@@ -39,8 +39,14 @@ body {
 }
 
 @keyframes fadeSlideIn {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { 
+        opacity: 0; 
+        transform: translateY(16px) scale(0.98);
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0) scale(1);
+    }
 }
 
 /* ===== 顶部导航栏 ===== */
@@ -213,74 +219,97 @@ input[type="date"]:focus {
 }
 
 .search-box .form-control {
-    padding-left: 36px;
-    border-radius: 20px;
-    background: #f8faf8;
-    border: 1.5px solid #e0e5e0;
+    padding-left: 40px;
+    padding-right: 16px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #f8faf8 0%, #f0f4f0 100%);
+    border: 2px solid #e0e5e0;
     font-size: 0.9rem;
+    height: 44px;
+    transition: all 0.3s ease;
 }
 
 .search-box .form-control:focus {
     background: white;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(82, 183, 136, 0.12);
+    box-shadow: 0 0 0 4px rgba(82, 183, 136, 0.15);
+    transform: scale(1.01);
 }
 
 .search-box .search-icon {
     position: absolute;
-    left: 12px;
+    left: 14px;
     top: 50%;
     transform: translateY(-50%);
-    color: #a0a8a0;
-    font-size: 0.9rem;
+    color: var(--accent);
+    font-size: 1rem;
     pointer-events: none;
+    transition: all 0.3s ease;
+}
+
+.search-box .form-control:focus ~ .search-icon {
+    color: var(--primary);
+    transform: translateY(-50%) scale(1.1);
 }
 
 /* ===== 月份分组 ===== */
 .month-group {
-    border: 1px solid #e8ece8;
+    border: none;
     border-radius: var(--radius);
     overflow: hidden;
     background: white;
+    box-shadow: var(--shadow);
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+}
+
+.month-group:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
 }
 
 .month-header {
-    padding: 10px 14px;
-    background: #f8faf8;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #f8faf8 0%, #f0f4f0 100%);
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
     user-select: none;
+    border-bottom: 1px solid #e8ece8;
 }
 
 .month-header:hover {
-    background: #f0f4f0;
+    background: linear-gradient(135deg, #f0f4f0 0%, #e8ece8 100%);
 }
 
 .month-header .month-arrow {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    transition: transform 0.2s;
+    font-size: 0.8rem;
+    color: var(--primary);
+    transition: transform 0.3s ease;
+    width: 20px;
+    text-align: center;
 }
 
 .month-header .badge {
     font-size: 0.7rem;
-    font-weight: 500;
-    padding: 2px 8px;
-    border-radius: 10px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--primary-light) 100%);
 }
 
 .month-body {
-    padding: 4px;
+    padding: 6px 8px;
 }
 
 .month-body .date-card {
-    margin: 4px;
+    margin: 6px 0;
     box-shadow: none;
     border: 1px solid #f0f2f0;
+    border-radius: var(--radius-sm);
 }
 
 .month-body .date-card:hover {
-    border-color: var(--accent-light);
+    border-color: var(--accent);
+    transform: translateX(4px);
 }
 
 /* ===== 日期卡片 ===== */
@@ -290,18 +319,20 @@ input[type="date"]:focus {
     box-shadow: var(--shadow);
     margin-bottom: 10px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
     border: 1px solid rgba(0,0,0,0.04);
+    will-change: transform, box-shadow;
 }
 
 .date-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    transform: translateY(-3px) translateX(2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
 }
 
 .date-card:active {
-    transform: translateY(0);
+    transform: translateY(0) translateX(0);
+    box-shadow: var(--shadow);
 }
 
 .date-card .card-body {
@@ -333,11 +364,12 @@ input[type="date"]:focus {
     border: 2px solid #e8ece8;
     border-radius: var(--radius);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     background: white;
     height: 100%;
     position: relative;
     overflow: hidden;
+    will-change: transform, box-shadow;
 }
 
 .test-type-card::before {
@@ -347,15 +379,16 @@ input[type="date"]:focus {
     left: 0;
     right: 0;
     height: 3px;
-    background: var(--accent);
+    background: linear-gradient(90deg, var(--accent) 0%, var(--primary-light) 100%);
     transform: scaleX(0);
-    transition: transform 0.2s ease;
+    transition: transform 0.3s ease;
+    transform-origin: left;
 }
 
 .test-type-card:hover {
     border-color: var(--accent);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(82,183,136,0.15);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 28px rgba(82,183,136,0.2);
 }
 
 .test-type-card:hover::before {
@@ -363,15 +396,15 @@ input[type="date"]:focus {
 }
 
 .test-type-card .card-body {
-    padding: 14px 8px;
+    padding: 16px 8px;
 }
 
 .test-type-card i {
-    transition: transform 0.2s ease;
+    transition: all 0.3s ease;
 }
 
 .test-type-card:hover i {
-    transform: scale(1.15);
+    transform: scale(1.2) rotate(5deg);
 }
 
 /* ===== 数据录入表格 ===== */
@@ -447,35 +480,57 @@ input[type="date"]:focus {
 
 /* ===== 底部导航 ===== */
 .fixed-bottom {
-    border-top: 1px solid #e0e5e0 !important;
-    box-shadow: 0 -4px 16px rgba(0,0,0,0.04) !important;
+    border-top: none !important;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    backdrop-filter: blur(20px);
 }
 
 .fixed-bottom .btn {
     border: none;
-    padding: 6px 10px;
-    transition: all 0.2s;
+    padding: 8px 12px;
+    transition: all 0.3s ease;
+    position: relative;
 }
 
 .fixed-bottom .btn:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    color: var(--accent) !important;
+}
+
+.fixed-bottom .btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 24px;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: transform 0.3s ease;
+}
+
+.fixed-bottom .btn.text-success::after {
+    transform: translateX(-50%) scaleX(1);
 }
 
 .fixed-bottom .btn small {
     font-size: 0.65rem;
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: 0.3px;
 }
 
 .fixed-bottom .btn-success.rounded-circle {
     background: linear-gradient(135deg, var(--accent) 0%, var(--primary-light) 100%) !important;
-    border: none !important;
-    box-shadow: 0 4px 16px rgba(82,183,136,0.4) !important;
-    transition: all 0.2s !important;
+    border: 4px solid white !important;
+    box-shadow: 0 4px 20px rgba(82,183,136,0.4) !important;
+    transition: all 0.3s ease !important;
 }
 
 .fixed-bottom .btn-success.rounded-circle:hover {
-    transform: translateY(-3px) scale(1.05) !important;
-    box-shadow: 0 6px 24px rgba(82,183,136,0.5) !important;
+    transform: translateY(-4px) scale(1.08) !important;
+    box-shadow: 0 8px 28px rgba(82,183,136,0.5) !important;
 }
 
 /* ===== 通用卡片 ===== */
@@ -539,13 +594,14 @@ input[type="date"]:focus {
 /* ===== 模态框 ===== */
 .modal-content {
     border: none;
-    border-radius: 20px;
+    border-radius: 24px;
     overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
 }
 
 .modal-header {
     border-bottom: none;
-    padding: 20px 24px 12px;
+    padding: 24px 28px 16px;
 }
 
 .modal-header.bg-success {
@@ -553,12 +609,21 @@ input[type="date"]:focus {
 }
 
 .modal-body {
-    padding: 16px 24px;
+    padding: 20px 28px;
 }
 
 .modal-footer {
     border-top: 1px solid #f0f2f0;
-    padding: 16px 24px;
+    padding: 20px 28px;
+}
+
+/* 模态框动画 */
+.modal.fade .modal-dialog {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal.show .modal-dialog {
+    transform: scale(1);
 }
 
 /* ===== 按钮优化 ===== */
@@ -608,6 +673,26 @@ input[type="date"]:focus {
         max-width: 640px;
         margin: 0 auto;
         padding: 0 8px;
+    }
+}
+
+/* 移动端优化 */
+@media (max-width: 576px) {
+    .main-content {
+        padding: 0 12px;
+    }
+    
+    .date-card .card-body {
+        padding: 12px 14px;
+    }
+    
+    .month-header {
+        padding: 10px 14px;
+    }
+    
+    .search-box .form-control {
+        height: 40px;
+        font-size: 0.85rem;
     }
 }
 

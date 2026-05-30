@@ -216,10 +216,19 @@ async function renderDatePage() {
 
     empty.classList.add('d-none');
 
-    // 最近3个试验
+    // 排序（最新的在前）
     const sorted = exps.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    // 批量更新 DOM - 使用 DocumentFragment 减少重绘
     const recentList = document.getElementById('recentList');
-    recentList.innerHTML = sorted.slice(0, 3).map(exp => dateCard(exp)).join('');
+    const recentFragment = document.createDocumentFragment();
+    sorted.slice(0, 3).forEach(exp => {
+        const div = document.createElement('div');
+        div.innerHTML = dateCard(exp);
+        recentFragment.appendChild(div.firstElementChild);
+    });
+    recentList.innerHTML = '';
+    recentList.appendChild(recentFragment);
     recent.classList.remove('d-none');
 
     // 全部列表 - 按月分组
@@ -301,7 +310,14 @@ function toggleMonth(month) {
     saveCollapsedMonths(collapsed);
 }
 
+// ===== 搜索防抖 =====
+let _searchTimer = null;
 function onSearchInput() {
+    if (_searchTimer) clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(() => performSearch(), 200);
+}
+
+function performSearch() {
     const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
     const allList = document.getElementById('allList');
 
