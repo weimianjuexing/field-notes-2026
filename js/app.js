@@ -1161,3 +1161,30 @@ function showToast(message, type = 'success') {
 function showAbout() {
     new bootstrap.Modal(document.getElementById('aboutModal')).show();
 }
+
+function submitFeedback() {
+    const text = document.getElementById('feedbackText').value.trim();
+    const contact = document.getElementById('feedbackContact').value.trim();
+
+    if (!text) {
+        showToast('请输入反馈内容', 'warning');
+        return;
+    }
+
+    const user = getCurrentUser();
+    const subject = encodeURIComponent(`田间试验数据APP反馈 - ${user}`);
+    const body = encodeURIComponent(
+        `反馈用户：${user}\n` +
+        `联系方式：${contact || '未填写'}\n` +
+        `反馈时间：${new Date().toLocaleString('zh-CN')}\n` +
+        `版本：2.1.1\n` +
+        `────────────────\n` +
+        `${text}`
+    );
+
+    window.open(`mailto:1814771552@qq.com?subject=${subject}&body=${body}`);
+
+    showToast('已打开邮件客户端，请发送', 'success');
+    document.getElementById('feedbackText').value = '';
+    document.getElementById('feedbackContact').value = '';
+}
