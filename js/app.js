@@ -935,6 +935,7 @@ async function updateUploadUI() {
         document.getElementById('uploadDesc').textContent = '点击"上传并下载"同步所有数据';
         document.getElementById('uploadStats').style.display = '';
         document.getElementById('uploadActions').style.display = '';
+        document.getElementById('cloudDataSection').style.display = '';
 
         const stats = await getLocalStats();
         document.getElementById('ulLocalDates').textContent = stats.dates;
@@ -948,6 +949,7 @@ async function updateUploadUI() {
         }
 
         document.getElementById('btnUpload').disabled = false;
+        loadCloudData();
     } else {
         syncIcon.className = 'sync-status sync-disconnected';
         syncIcon.innerHTML = '<i class="bi bi-cloud-slash-fill"></i>';
@@ -956,7 +958,56 @@ async function updateUploadUI() {
         document.getElementById('uploadDesc').textContent = '配置 Supabase 后即可同步';
         document.getElementById('uploadStats').style.display = 'none';
         document.getElementById('uploadActions').style.display = 'none';
+        document.getElementById('cloudDataSection').style.display = 'none';
         document.getElementById('btnUpload').disabled = true;
+    }
+}
+
+async function loadCloudData() {
+    const list = document.getElementById('cloudDataList');
+    list.innerHTML = '<div class="text-center py-2"><small class="text-muted">加载中...</small></div>';
+
+    try {
+        const records = await downloadRecords();
+        const user = getCurrentUser();
+        const userRecords = records.filter(r => r.user === user);
+
+        if (userRecords.length === 0) {
+            list.innerHTML = '<div class="text-center py-2"><small class="text-muted">暂无云端数据</small></div>';
+            return;
+        }
+
+        // 按试验类型分组
+        const groups = {};
+        userRecords.forEach(r => {
+            const type = r.testLabel || r.testType;
+            if (!groups[type]) groups[type] = [];
+            groups[type].push(r);
+        });
+
+        let html = '';
+        for (const [type, items] of Object.entries(groups)) {
+            const unit = items[0].testUnit || '';
+            html += `
+                <div class="card mb-2">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold">${type}</span>
+                                ${unit ? `<small class="text-muted ms-1">(${unit})</small>` : ''}
+                            </div>
+                            <span class="badge bg-secondary">${items.length}条</span>
+                        </div>
+                        <div class="mt-1">
+                            <small class="text-muted">${items.map(i => i.date).join(', ')}</small>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        list.innerHTML = html;
+    } catch (e) {
+        list.innerHTML = `<div class="text-center py-2"><small class="text-danger">加载失败: ${e.message}</small></div>`;
     }
 }
 
