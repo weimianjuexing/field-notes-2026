@@ -318,8 +318,27 @@ function onSearchInput() {
     getAllExperiments().then(exps => {
         const filtered = exps.filter(exp => {
             const name = (exp.name || '').toLowerCase();
-            const date = exp.date.toLowerCase();
-            return name.includes(keyword) || date.includes(keyword);
+            const date = exp.date; // "2026-05-30"
+
+            // 名称匹配
+            if (name.includes(keyword)) return true;
+
+            // 日期模糊匹配：支持 5.30, 5-30, 0530, 5月30, 2026.5 等格式
+            const normalized = keyword.replace(/[.\-\/月]/g, '-').replace(/日/g, '');
+            const dateCompact = date.replace(/-/g, ''); // "20260530"
+            const dateShort = date.substring(5).replace(/-/g, ''); // "0530"
+            const dateMonth = date.substring(5, 7); // "05"
+            const dateDay = date.substring(8); // "30"
+
+            // 匹配各种格式
+            if (date.includes(normalized)) return true; // 2026-05-30, 05-30
+            if (dateCompact.includes(keyword.replace(/[^0-9]/g, ''))) return true; // 20260530, 0530
+            if (dateShort.includes(keyword.replace(/[^0-9]/g, ''))) return true; // 0530
+            if (keyword.replace(/[^0-9]/g, '') === dateMonth + dateDay) return true; // 530 → 0530
+            if (keyword.replace(/[^0-9]/g, '') === dateDay) return true; // 30 → 30日
+            if (keyword.replace(/[^0-9]/g, '') === dateMonth) return true; // 5 → 05月
+
+            return false;
         });
 
         if (filtered.length === 0) {
